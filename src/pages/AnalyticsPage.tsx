@@ -51,7 +51,7 @@ export function AnalyticsPage() {
   const fmt = (n: number) => n >= 10000 ? `${(n / 10000).toFixed(1)} 万` : n.toLocaleString();
 
   return (
-    <div className="space-y-4 max-w-6xl">
+    <div className="space-y-4">
       <div>
         <div className="page-title">数据分析</div>
         <div className="page-sub">曝光 → 浏览 → 想要 → 成交 全链路量化追踪（按日录入，同日期覆盖更新）</div>

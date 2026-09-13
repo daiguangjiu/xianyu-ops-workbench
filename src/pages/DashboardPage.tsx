@@ -41,7 +41,7 @@ export function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-4 max-w-6xl">
+    <div className="space-y-4">
       <div>
         <div className="page-title">数据看板</div>
         <div className="page-sub">你好，{me?.name} · 经营指标与任务进度总览</div>

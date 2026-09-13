@@ -10,7 +10,7 @@ const FREQ_TAG: Record<string, { text: string; style: React.CSSProperties }> = {
 
 export function SopChecklistPage() {
   return (
-    <div className="space-y-4 max-w-5xl">
+    <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <div className="page-title">每日Checklist · 单账号全维SOP</div>

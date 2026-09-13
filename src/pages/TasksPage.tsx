@@ -43,7 +43,7 @@ export function TasksPage() {
   };
 
   return (
-    <div className="space-y-4 max-w-5xl">
+    <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <div className="page-title">任务管理</div>

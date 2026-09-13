@@ -17,7 +17,7 @@ const LOGS = [
 
 export function ChangelogPage() {
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className="space-y-4">
       <div>
         <div className="page-title">更新日志</div>
         <div className="page-sub">版本迭代与变更记录</div>

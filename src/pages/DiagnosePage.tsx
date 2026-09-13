@@ -53,7 +53,7 @@ export function DiagnosePage() {
   const avgPrice = nums.orders > 0 ? Math.round((Number(gmv) || 0) / nums.orders) : 0;
 
   return (
-    <div className="space-y-4 max-w-4xl">
+    <div className="space-y-4">
       <div>
         <div className="page-title">投流诊断器</div>
         <div className="page-sub">五段漏斗转化诊断 · 断点定位 · 优化建议（参考闲鱼大盘经验区间）</div>
