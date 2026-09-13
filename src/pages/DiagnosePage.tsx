@@ -61,7 +61,7 @@ export function DiagnosePage() {
 
       <div className="card card-pad">
         <div className="section-title mb-3">输入周期数据（如近 7 天）</div>
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
+        <div className="grid-form">
           {STAGES.map((s) => (
             <div key={s.key}>
               <label className="form-label">{s.label}</label>

@@ -58,7 +58,7 @@ export function AnalyticsPage() {
       </div>
 
       {/* 汇总卡 */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
+      <div className="grid-form">
         {[
           { label: '累计曝光', value: fmt(totals.exposure) },
           { label: '累计浏览', value: fmt(totals.views) },
@@ -73,7 +73,7 @@ export function AnalyticsPage() {
         ))}
       </div>
 
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)' }}>
+      <div className="grid-2">
         {/* 图表 + 表格 */}
         <div className="space-y-4 min-w-0">
           <div className="card card-pad">

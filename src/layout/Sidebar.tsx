@@ -40,14 +40,29 @@ export function Sidebar({ open, mobileOpen, isMobile, onCloseMobile }: Props) {
           return (
             <div key={group.key}>
               <div className="nav-group-title">{group.title}</div>
-              {items.map(({ path, label, sub, Icon }) => (
-                <NavLink key={path} to={path} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                  <Icon size={16} className="flex-shrink-0" />
-                  <span className="min-w-0">
-                    <span className="block truncate">{label}</span>
-                    <span className="nav-sub block truncate">{sub}</span>
-                  </span>
-                </NavLink>
+              {items.map((item) => (
+                <div key={item.path}>
+                  <NavLink to={item.path} end={item.children?.some((c) => c.path === item.path)} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <item.Icon size={16} className="flex-shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block truncate">{item.label}</span>
+                      <span className="nav-sub block truncate">{item.sub}</span>
+                    </span>
+                  </NavLink>
+                  {item.children && (
+                    <div className="nav-children">
+                      {item.children.map((c) => (
+                        <NavLink key={c.path} to={c.path} end={c.path === item.path} className={({ isActive }) => `nav-item nav-child ${isActive ? 'active' : ''}`}>
+                          <c.Icon size={13} className="flex-shrink-0" />
+                          <span className="min-w-0">
+                            <span className="block truncate">{c.label}</span>
+                            <span className="nav-sub block truncate">{c.sub}</span>
+                          </span>
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           );

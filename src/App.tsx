@@ -4,6 +4,7 @@ import { LoginPage } from './auth/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { TasksPage } from './pages/TasksPage';
 import { SopCalendarPage } from './pages/SopCalendarPage';
+import { SopChecklistPage } from './pages/SopChecklistPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { DiagnosePage } from './pages/DiagnosePage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/tasks" element={<TasksPage />} />
         {/* 一级菜单：自营业务 */}
         <Route path="/ops/sop" element={<SopCalendarPage />} />
+        <Route path="/ops/sop/checklist" element={<SopChecklistPage />} />
         <Route path="/ops/analytics" element={<AnalyticsPage />} />
         <Route path="/ops/diagnose" element={<DiagnosePage />} />
         {/* 一级菜单：系统 */}

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ListTodo, CalendarCheck, ShoppingBag, TrendingUp, ArrowRight } from 'lucide-react';
 import { useTasks } from '../stores/taskStore';
 import { useMetrics } from '../stores/analyticsStore';
-import { useSop, todayStr } from '../stores/sopStore';
+import { useSop, todayStr, recordPct, recordKey } from '../stores/sopStore';
 import { getUsers, currentUser } from '../auth/auth';
 import { STATUS_LABEL } from '../stores/taskStore';
 
@@ -11,7 +11,7 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const { tasks } = useTasks();
   const { metrics } = useMetrics();
-  const { items, records } = useSop();
+  const { records } = useSop();
   const users = getUsers();
   const me = currentUser();
   const today = todayStr();
@@ -19,11 +19,8 @@ export function DashboardPage() {
   const todayTasks = tasks.filter((t) => t.status !== 'done');
   const doneRate = tasks.length ? Math.round((tasks.filter((t) => t.status === 'done').length / tasks.length) * 100) : 0;
 
-  const myTodayRecord = me ? records[`${today}__${me.id}`] : undefined;
-  const requiredIds = items.filter((i) => i.required).map((i) => i.id);
-  const sopPct = myTodayRecord && requiredIds.length
-    ? Math.round((requiredIds.filter((id) => myTodayRecord.done.includes(id)).length / requiredIds.length) * 100)
-    : 0;
+  const myTodayRecord = me ? records[recordKey(today, me.id)] : undefined;
+  const sopPct = recordPct(today, myTodayRecord);
 
   const monthPrefix = today.slice(0, 7);
   const monthMetrics = metrics.filter((m) => m.date.startsWith(monthPrefix));
@@ -32,10 +29,9 @@ export function DashboardPage() {
 
   /** 全员今日SOP完成情况 */
   const teamSop = useMemo(() => users.map((u) => {
-    const r = records[`${today}__${u.id}`];
-    const hit = r ? requiredIds.filter((id) => r.done.includes(id)).length : 0;
-    return { name: u.name, hit, total: requiredIds.length, has: !!r };
-  }), [users, records, requiredIds, today]);
+    const r = records[recordKey(today, u.id)];
+    return { name: u.name, pct: recordPct(today, r), has: !!r };
+  }), [users, records, today]);
 
   const cards = [
     { Icon: ListTodo, label: '进行中任务', value: `${todayTasks.length}`, sub: `总完成率 ${doneRate}%`, color: 'var(--brand)', to: '/tasks' },
@@ -51,7 +47,7 @@ export function DashboardPage() {
         <div className="page-sub">你好，{me?.name} · 经营指标与任务进度总览</div>
       </div>
 
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
+      <div className="grid-cards">
         {cards.map(({ Icon, label, value, sub, color, to }) => (
           <div key={label} className="card card-pad cursor-pointer transition-transform hover:-translate-y-0.5" onClick={() => navigate(to)}>
             <div className="flex items-center justify-between">
@@ -67,7 +63,7 @@ export function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+      <div className="grid-2-eq">
         {/* 近期任务 */}
         <div className="card card-pad">
           <div className="section-title mb-3">近期任务</div>
@@ -95,11 +91,11 @@ export function DashboardPage() {
               <div key={s.name}>
                 <div className="flex items-center justify-between text-[12.5px] mb-1">
                   <span style={{ color: 'var(--text-secondary)' }}>{s.name}</span>
-                  <span className="font-bold tabular-nums" style={{ color: s.has && s.total && s.hit / s.total >= 0.8 ? 'var(--accent-emerald)' : 'var(--text-muted)' }}>
-                    {s.has ? `${s.hit}/${s.total}` : '未打卡'}
+                  <span className="font-bold tabular-nums" style={{ color: !s.has ? 'var(--text-muted)' : s.pct >= 80 ? 'var(--accent-emerald)' : s.pct >= 50 ? 'var(--accent-amber)' : 'var(--accent-rose)' }}>
+                    {s.has ? `${s.pct}%` : '未打卡'}
                   </span>
                 </div>
-                <div className="progress-track"><div className="progress-fill" style={{ width: s.has && s.total ? `${(s.hit / s.total) * 100}%` : 0 }} /></div>
+                <div className="progress-track"><div className="progress-fill" style={{ width: `${s.has ? s.pct : 0}%` }} /></div>
               </div>
             ))}
           </div>
