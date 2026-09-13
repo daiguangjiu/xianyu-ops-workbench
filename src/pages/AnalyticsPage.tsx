@@ -1,15 +1,27 @@
 import { useMemo, useState } from 'react';
-import { Plus, Trash2, BarChart3 } from 'lucide-react';
-import { useMetrics, type DailyMetric } from '../stores/analyticsStore';
+import { Plus, Trash2, BarChart3, User as UserIcon } from 'lucide-react';
+import { useMetrics, metricOwner, type DailyMetric } from '../stores/analyticsStore';
 import { todayStr } from '../stores/sopStore';
+import { getUsers, currentUser, isSuperadmin } from '../auth/auth';
 
 const emptyForm = { date: todayStr(), exposure: '', views: '', wants: '', orders: '', gmv: '', note: '' };
 
 export function AnalyticsPage() {
   const { metrics, upsert, remove } = useMetrics();
+  const users = getUsers();
+  const me = currentUser();
+  const admin = isSuperadmin();
   const [form, setForm] = useState(emptyForm);
 
-  const sorted = useMemo(() => [...metrics].sort((a, b) => a.date.localeCompare(b.date)), [metrics]);
+  /** 数据范围：管理员可切换人员，成员锁定本人 */
+  const [scopeId, setScopeId] = useState(me?.id || '');
+  const scopeUser = users.find((u) => u.id === scopeId) || me;
+  const scoped = useMemo(
+    () => metrics.filter((m) => metricOwner(m) === (scopeUser?.id || '')),
+    [metrics, scopeUser],
+  );
+
+  const sorted = useMemo(() => [...scoped].sort((a, b) => a.date.localeCompare(b.date)), [scoped]);
   const recent = sorted.slice(-14);
 
   /** 14 天 GMV 柱状图（纯 SVG） */
@@ -35,8 +47,9 @@ export function AnalyticsPage() {
   }, [sorted]);
 
   const submit = () => {
-    if (!form.date) return;
+    if (!form.date || !scopeUser) return;
     upsert({
+      userId: scopeUser.id,
       date: form.date,
       exposure: Number(form.exposure) || 0,
       views: Number(form.views) || 0,
@@ -52,9 +65,23 @@ export function AnalyticsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <div className="page-title">数据分析</div>
-        <div className="page-sub">曝光 → 浏览 → 想要 → 成交 全链路量化追踪（按日录入，同日期覆盖更新）</div>
+      <div className="flex items-end justify-between flex-wrap gap-3">
+        <div>
+          <div className="page-title">数据分析</div>
+          <div className="page-sub">曝光 → 浏览 → 想要 → 成交 全链路量化追踪（按日录入，同人同日覆盖更新）</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <UserIcon size={14} color="var(--text-muted)" />
+          {admin ? (
+            <select className="select" style={{ width: 170 }} value={scopeId} onChange={(e) => setScopeId(e.target.value)} title="选择查看/录入的人员">
+              {users.map((u) => <option key={u.id} value={u.id}>{u.name}{u.role === 'superadmin' ? '（管理员）' : ''}</option>)}
+            </select>
+          ) : (
+            <span className="chip" style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+              {me?.name}（本人数据）
+            </span>
+          )}
+        </div>
       </div>
 
       {/* 汇总卡 */}
@@ -79,7 +106,7 @@ export function AnalyticsPage() {
           <div className="card card-pad">
             <div className="flex items-center gap-2 mb-3">
               <BarChart3 size={15} color="var(--brand)" />
-              <span className="section-title">近 14 天 GMV 趋势</span>
+              <span className="section-title">{scopeUser?.name} · 近 14 天 GMV 趋势</span>
             </div>
             {recent.length === 0 ? (
               <div className="text-[12.5px] py-10 text-center" style={{ color: 'var(--text-muted)' }}>暂无数据，右侧录入后自动生成图表</div>
@@ -108,9 +135,9 @@ export function AnalyticsPage() {
 
           <div className="card overflow-x-auto">
             <table className="table">
-              <thead><tr><th>日期</th><th>曝光</th><th>浏览</th><th>想要</th><th>成交</th><th>GMV</th><th>备注</th><th /></tr></thead>
+              <thead><tr><th>日期</th><th>曝光</th><th>浏览</th><th>想要</th><th>成交</th><th>GMV</th><th>备注</th>{admin && <th />} </tr></thead>
               <tbody>
-                {sorted.length === 0 && <tr><td colSpan={8} className="text-center py-8" style={{ color: 'var(--text-muted)' }}>暂无数据</td></tr>}
+                {sorted.length === 0 && <tr><td colSpan={admin ? 8 : 7} className="text-center py-8" style={{ color: 'var(--text-muted)' }}>暂无数据</td></tr>}
                 {[...sorted].reverse().map((m) => (
                   <tr key={m.id}>
                     <td className="font-mono text-[12px]" style={{ color: 'var(--text)' }}>{m.date}</td>
@@ -120,7 +147,7 @@ export function AnalyticsPage() {
                     <td className="font-bold" style={{ color: m.orders > 0 ? 'var(--accent-emerald)' : undefined }}>{m.orders}</td>
                     <td>¥{m.gmv.toLocaleString()}</td>
                     <td className="text-[12px] max-w-[160px] truncate">{m.note || '—'}</td>
-                    <td><button className="btn btn-sm btn-danger" onClick={() => { if (confirm(`删除 ${m.date} 的数据？`)) remove(m.id); }}><Trash2 size={12} /></button></td>
+                    {admin && <td><button className="btn btn-sm btn-danger" onClick={() => { if (confirm(`删除 ${scopeUser?.name} ${m.date} 的数据？`)) remove(m.id); }}><Trash2 size={12} /></button></td>}
                   </tr>
                 ))}
               </tbody>
@@ -130,7 +157,7 @@ export function AnalyticsPage() {
 
         {/* 录入表单 */}
         <div className="card card-pad h-fit">
-          <div className="section-title mb-3">录入当日数据</div>
+          <div className="section-title mb-3">录入当日数据<span className="ml-1.5 text-[12px] font-normal" style={{ color: 'var(--text-muted)' }}>→ {scopeUser?.name}</span></div>
           <div className="space-y-3">
             <div>
               <label className="form-label">日期</label>

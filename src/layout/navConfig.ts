@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, ListTodo, CalendarCheck, BarChart3, Stethoscope,
-  Settings, ScrollText, Users, ListChecks,
+  Settings, ScrollText, Users, ListChecks, ClipboardList,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -39,6 +39,7 @@ export const NAV_GROUPS: NavGroup[] = [
         children: [
           { path: '/ops/sop', label: '运营日历', sub: '每人员每日打卡 · 历史留痕', Icon: CalendarCheck },
           { path: '/ops/sop/checklist', label: '每日Checklist', sub: '单账号全维SOP · 手册原文', Icon: ListChecks },
+          { path: '/ops/records', label: '打卡管理', sub: '全员打卡/未打卡 · 明细指导', Icon: ClipboardList, superOnly: true },
         ],
       },
       { path: '/ops/analytics', label: '数据分析', sub: '曝光→成交全链路量化', Icon: BarChart3 },

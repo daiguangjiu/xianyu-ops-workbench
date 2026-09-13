@@ -51,7 +51,7 @@ export function Sidebar({ open, mobileOpen, isMobile, onCloseMobile }: Props) {
                   </NavLink>
                   {item.children && (
                     <div className="nav-children">
-                      {item.children.map((c) => (
+                      {item.children.filter((c) => !c.superOnly || admin).map((c) => (
                         <NavLink key={c.path} to={c.path} end={c.path === item.path} className={({ isActive }) => `nav-item nav-child ${isActive ? 'active' : ''}`}>
                           <c.Icon size={13} className="flex-shrink-0" />
                           <span className="min-w-0">
