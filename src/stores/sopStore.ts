@@ -136,13 +136,47 @@ export const SOP_ITEMS: SopItem[] = SOP_GROUPS.flatMap((g) =>
 );
 
 const RECORDS_KEY = `${LS_PREFIX}sop_records_v2`;
+/** v0.1.0 旧版记录键（v0.2.0 升级后残留），启动时自动迁移一次 */
+export const LEGACY_RECORDS_KEY = `${LS_PREFIX}sop_records`;
+
+/** 旧版默认模板条目 id（sop-1~7）→ 新手册 Checklist 条目 id 映射 */
+const LEGACY_ITEM_MAP: Record<string, string> = {
+  'sop-1': 'B1', // 商品擦亮 → B1 擦亮全部在售商品
+  'sop-2': 'B2', // 上新/补充新款 → B2 上新 1–3 个
+  'sop-3': 'A1', // 回复咨询消息 → A1 清空隔夜消息
+  'sop-4': 'A3', // 议单催拍/促成转化 → A3 未成交询单二次跟进
+  'sop-5': 'A4', // 订单处理与发货跟进 → A4 订单状态全链路巡检
+  'sop-6': 'C2', // 同行竞品观察 → C2 核心竞品监控
+  'sop-7': 'D1', // 当日数据记录 → D1 填写日表 7 字段
+};
 
 function loadRecords(): Record<string, SopRecord> {
+  let out: Record<string, SopRecord> = {};
   try {
     const raw = localStorage.getItem(RECORDS_KEY);
-    if (raw) return JSON.parse(raw) as Record<string, SopRecord>;
+    if (raw) out = (JSON.parse(raw) || {}) as Record<string, SopRecord>;
   } catch { /* ignore */ }
-  return {};
+
+  // 旧版（v0.1.0）打卡记录自动迁移：新数据优先，旧条目 id 映射到新 Checklist
+  try {
+    const legacyRaw = localStorage.getItem(LEGACY_RECORDS_KEY);
+    if (legacyRaw) {
+      const legacy = JSON.parse(legacyRaw) as Record<string, SopRecord>;
+      let migrated = 0;
+      for (const [k, r] of Object.entries(legacy || {})) {
+        if (!r || typeof r !== 'object' || !r.date || !r.personId) continue;
+        if (out[k]) continue; // 同日期同人已有新数据，不覆盖
+        out[k] = {
+          ...r,
+          done: Array.from(new Set((r.done || []).map((id) => LEGACY_ITEM_MAP[id] || id))),
+        };
+        migrated++;
+      }
+      if (migrated > 0) localStorage.setItem(RECORDS_KEY, JSON.stringify(out));
+      localStorage.removeItem(LEGACY_RECORDS_KEY);
+    }
+  } catch { /* ignore */ }
+  return out;
 }
 
 export const recordKey = (date: string, personId: string) => `${date}__${personId}`;
@@ -199,7 +233,32 @@ export function useSop() {
     });
   }, []);
 
-  return { records, getRecord, saveRecord, removeRecord };
+  /** 数据修复：把某「已不存在人员」的记录整体改归属到现有用户（同日期冲突时合并） */
+  const reassignRecords = useCallback((fromPersonId: string, toPersonId: string) => {
+    setRecords((prev) => {
+      const next: Record<string, SopRecord> = {};
+      for (const [k, r] of Object.entries(prev)) {
+        if (r.personId !== fromPersonId) { next[k] = r; continue; }
+        const targetKey = recordKey(r.date, toPersonId);
+        const target = prev[targetKey];
+        if (target) {
+          // 合并：done 取并集，extra/note 拼接去重，保留较新时间
+          next[targetKey] = {
+            ...target,
+            done: Array.from(new Set([...target.done, ...r.done])),
+            extra: Array.from(new Set([...(target.extra || []), ...(r.extra || [])])),
+            note: [target.note, r.note].filter(Boolean).join(' / '),
+            updatedAt: (r.updatedAt || '') > (target.updatedAt || '') ? r.updatedAt : target.updatedAt,
+          };
+        } else {
+          next[targetKey] = { ...r, personId: toPersonId };
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  return { records, getRecord, saveRecord, removeRecord, reassignRecords };
 }
 
 /** 月份工具：日历格子（含前后空位） */

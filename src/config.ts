@@ -3,7 +3,7 @@ export const APP_CONFIG = {
   short: '闲鱼运营台',
   nameInitial: '鱼',
   subtitle: '自营账号矩阵 · 运营SOP · 数据驱动',
-  version: '0.3.0',
+  version: '0.3.1',
 };
 
 /** localStorage 键前缀（避免与其他系统冲突） */
